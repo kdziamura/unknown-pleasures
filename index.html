@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Unknown Pleasures</title>
+	<script src="Complex.js"></script>
+	<script src="script.js"></script>
+	<style>
+		body {
+			display: flex;
+			flex-direction: column;
+		}
+
+		html, body {
+			background: #111;
+			color: white;
+			font-family: sans-serif;
+		}
+
+		.container {
+			text-align: center;
+			padding: .7rem;
+		}
+
+		.microphone, label {
+			padding: .7rem;
+			border: 2px solid white;
+			display: inline-block;
+			cursor: pointer;
+		}
+
+		input[type="file"] {
+			display: none;
+		}
+
+
+/*		.container:nth-child(n+2) {
+			opacity: 0;
+			transition: opacity 300ms;
+		}
+
+		.container:hover {
+			opacity: 1;
+		}*/
+
+	</style>
+</head>
+<body>
+	<div class="container"></div>
+	<div class="container">
+		<div class="microphone">Use microphone</div>
+		<label>or select file<input type="file" id="file" name="sound" /></label>
+	</div>
+	<div class="container"></div>
+	<script>
+	var renderOptions = {
+		width: 600,
+		height: 600,
+		strokeStyle: 'white',
+		fillStyle: '#111',
+		lineWidth: 3,
+		padding: [100, 150],
+		lines: 60,
+		points: 20
+	};
+
+	var uP = new UnknownPleasures(renderOptions);
+	var cvs = uP.init();
+
+	var containerCvs = document.getElementsByClassName('container')[0];
+	var containerAudio = document.getElementsByClassName('container')[2];
+	var microphoneBtn = document.getElementsByClassName('microphone')[0];
+
+	uP.preRender();
+	uP.render();
+	containerCvs.appendChild(cvs);
+	containerAudio.appendChild(uP.audio);
+
+	// uP.setSource('sound.mp3');
+
+	function handleFileSelect(evt) {
+		var file = evt.target.files[0];
+		var reader = new FileReader();
+
+		reader.onload = function (e) {
+			uP.setSource(e.target.result);
+		};
+
+		//reader.readAsArrayBuffer(file);
+		if (file) {
+			reader.readAsDataURL(file);
+		}
+	}
+
+	document.getElementById('file').addEventListener('change', handleFileSelect, false);
+
+	microphoneBtn.addEventListener('click', function (e) {
+		uP.setSource();
+	});
+
+	</script>
+</body>
+</html>
