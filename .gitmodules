@@ -1,3 +1,3 @@
-[submodule "Complex.js"]
-	path = Complex.js
+[submodule "complex.js"]
+	path = complex.js
 	url = https://github.com/wontem/Complex.js.git
