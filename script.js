@@ -192,7 +192,8 @@ UnknownPleasures.prototype.setSource = function (src) {
 	var audioCtx = this.audioCtx;
 	var self = this;
 
-	if (this.source) this.source.disconnect();
+	this.unloadSource();
+
 
 	if (typeof src === 'string') {
 		audio.style.display = '';
@@ -202,9 +203,9 @@ UnknownPleasures.prototype.setSource = function (src) {
 		this.source.connect(audioCtx.destination);
 	} else if (src === undefined) {
 		audio.style.display = 'none';
-		audio.src = '';
 		navigator.getUserMedia ({ audio: true },
 			function(stream) {
+				self._stream = stream;
 				self.source = audioCtx.createMediaStreamSource(stream);
 				self.source.connect(analyser);
 			},
@@ -225,7 +226,19 @@ UnknownPleasures.prototype.setSource = function (src) {
 	// 	});
 	// }
 
-}
+};
+
+UnknownPleasures.prototype.unloadSource = function () {
+	if (this.source) {
+		this.source.disconnect();
+		this.source = null;
+	}
+	if (this._stream) {
+		this._stream.stop();
+		this._stream = null;
+	}
+	this.audio.src = '';
+};
 
 
 
