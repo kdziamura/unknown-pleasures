@@ -10,7 +10,8 @@ function getRandom() {
 
 // =====================================================
 
-function UnknownPleasures (options) {
+function UnknownPleasures (audioCtx, options) {
+	this.audioCtx = audioCtx;
 	this.options = options;
 	this.lines = new Array(options.lines);
 }
@@ -19,15 +20,6 @@ UnknownPleasures.prototype.init = function (canvas) {
 	canvas = canvas || document.createElement('canvas');
 	var ctx = this.ctx = canvas.getContext('2d');
 	var options = this.options;
-
-	// setup audio
-	this.audio = new Audio();
-	this.audio.autoplay = true;
-	this.audio.controls = true;
-	this.audio.style.display = 'none';
-
-	this.audioCtx = new AudioContext();
-	this._source = this.audioCtx.createMediaElementSource(this.audio);
 
 	// setup canvas
 	ctx.canvas.width = options.width;
@@ -38,6 +30,11 @@ UnknownPleasures.prototype.init = function (canvas) {
 
 	this.setAnalyser();
 	this.dataArray = new Uint8Array(this.analyser.fftSize);
+
+
+	for (var i = 0; i < this.options.lines; i++) {
+		this.lines[i] = this.getLine();
+	}
 
 	ctx.fillRect(0, 0, options.width, options.height);
 	ctx.translate(options.padding[1], options.padding[0]);
@@ -121,11 +118,6 @@ UnknownPleasures.prototype.updateData = function (onlyLast) {
 	}
 };
 
-UnknownPleasures.prototype.preRender = function () {
-	for (var i = 0; i < this.options.lines; i++) {
-		this.lines[i] = this.getLine();
-	}
-};
 
 UnknownPleasures.prototype.render = function () {
 	var rAF = window.requestAnimationFrame;
@@ -179,69 +171,6 @@ UnknownPleasures.prototype.render = function () {
 
 
 
-
-
-
-
-
-
-
-UnknownPleasures.prototype.setSource = function (src) {
-	var audio = this.audio;
-	var analyser = this.analyser;
-	var audioCtx = this.audioCtx;
-	var self = this;
-
-	this.unloadSource();
-
-
-	if (typeof src === 'string') {
-		audio.style.display = '';
-		audio.src = src;
-		this.source = this._source;
-		this.source.connect(analyser);
-		this.source.connect(audioCtx.destination);
-	} else if (src === undefined) {
-		audio.style.display = 'none';
-		navigator.getUserMedia ({ audio: true },
-			function(stream) {
-				self._stream = stream;
-				self.source = audioCtx.createMediaStreamSource(stream);
-				self.source.connect(analyser);
-			},
-			function(err) {
-				console.log("The following error occured: " + err);
-			}
-		);
-	}
-
-	// else { // arrayBuffer
-	// 	source = audioCtx.createBufferSource();
-
-	// 	audioCtx.decodeAudioData(src, function(audioBuffer) {
-	// 		source.buffer = audioBuffer;
-	// 		source.connect(analyser);
-	// 		source.connect(audioCtx.destination);
-	// 		source.start();
-	// 	});
-	// }
-
-};
-
-UnknownPleasures.prototype.unloadSource = function () {
-	if (this.source) {
-		this.source.disconnect();
-		this.source = null;
-	}
-	if (this._stream) {
-		this._stream.stop();
-		this._stream = null;
-	}
-	this.audio.src = '';
-};
-
-
-
 UnknownPleasures.prototype.setAnalyser = function (src) {
 	var analyser = this.audioCtx.createAnalyser();
 
@@ -271,15 +200,12 @@ UnknownPleasures.prototype.setAnalyser = function (src) {
 
 
 
-function Player (w, h) {
-	var canvas = document.createElement('canvas');
-	canvas.width = w;
-	canvas.height = h;
-	this.canvasCtx = canvas.getContext('2d');
+function Player () {
 	this.audioCtx = new AudioContext();
 	this.isPlaying = false;
 	this._pausePosition = 0;
 	this.source = null;
+	this._nodes = [];
 
 	this.ui = new Player.UI(this);
 }
@@ -294,15 +220,8 @@ Player.prototype.setSource = function (src) {
 	this.audioCtx.decodeAudioData(src, this.connect.bind(this));
 };
 
-Player.prototype.reset = function () {
-	if (this.isPlaying) {
-		this.isPlaying = false;
-		this.source.stop();
-	}
-};
-
 Player.prototype.connect = function (buffer) {
-	var source;
+	var source, i;
 
 	if (this.source) {
 		this.stop();
@@ -314,7 +233,19 @@ Player.prototype.connect = function (buffer) {
 	source.onended = this.reset.bind(this);
 	source.buffer = buffer || this.source.buffer;
 	this.source = source;
+
+	for (i = 0; i < this._nodes.length; i++) {
+		this.source.connect(this._nodes[i]);
+	}
+
 	this.source.connect(this.audioCtx.destination);
+};
+
+Player.prototype.reset = function () {
+	if (this.isPlaying) {
+		this.isPlaying = false;
+		this.source.stop();
+	}
 };
 
 Player.prototype._getTimeByPosition = function (position) {
@@ -363,7 +294,9 @@ Player.prototype.stop = function () {
 	this.reset();
 };
 
-
+Player.prototype.addNode = function (node) {
+	this._nodes.push(node);
+};
 
 
 

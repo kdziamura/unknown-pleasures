@@ -90,52 +90,35 @@
 	</div>
 	<div class="container"></div>
 	<script>
-	// var renderOptions = {
-	// 	width: 600,
-	// 	height: 600,
-	// 	strokeStyle: 'white',
-	// 	fillStyle: '#111',
-	// 	lineWidth: 3,
-	// 	padding: [100, 150],
-	// 	lines: 60,
-	// 	points: 20
-	// };
+	var renderOptions = {
+		width: 600,
+		height: 600,
+		strokeStyle: 'white',
+		fillStyle: '#111',
+		lineWidth: 3,
+		padding: [100, 150],
+		lines: 60,
+		points: 20
+	};
 
-	// var uP = new UnknownPleasures(renderOptions);
-	// var cvs = uP.init();
 
-	// var containerCvs = document.getElementsByClassName('container')[0];
+	var containerCvs = document.getElementsByClassName('container')[0];
 	var containerAudio = document.getElementsByClassName('container')[2];
 	// var microphoneBtn = document.getElementsByClassName('microphone')[0];
 
-	// uP.preRender();
-	// uP.render();
-	// containerCvs.appendChild(cvs);
-	// containerAudio.appendChild(uP.audio);
 
-	// // uP.setSource('sound.mp3');
+	var player = new Player();
 
-	// function handleFileSelect(evt) {
-	// 	var file = evt.target.files[0];
-	// 	var reader = new FileReader();
+	var uP = new UnknownPleasures(player.audioCtx, renderOptions);
 
-	// 	reader.onload = function (e) {
-	// 		uP.setSource(e.target.result);
-	// 	};
+	var cvs = uP.init();
+	player.addNode(uP.analyser);
 
-	// 	//reader.readAsArrayBuffer(file);
-	// 	if (file) {
-	// 		reader.readAsDataURL(file);
-	// 	}
-	// }
+	uP.render();
 
-	// document.getElementById('file').addEventListener('change', handleFileSelect, false);
+	containerCvs.appendChild(cvs);
 
-	// microphoneBtn.addEventListener('click', function (e) {
-	// 	uP.setSource();
-	// });
 
-	var player = new Player(200, 30);
 
 	function handleFileSelect(evt) {
 		var file = evt.target.files[0];
