@@ -29,19 +29,56 @@
 			cursor: pointer;
 		}
 
+		.microphone:hover,
+		label:hover {
+			background: rgba(255,255,255,.1);
+		}
+
 		input[type="file"] {
 			display: none;
 		}
 
 
-/*		.container:nth-child(n+2) {
-			opacity: 0;
-			transition: opacity 300ms;
+		.player .button {
+			width: 30px;
+			height: 30px;
+			background: white;
+			display: inline-block;
+			position: relative;
 		}
 
-		.container:hover {
-			opacity: 1;
-		}*/
+		.player .button::before {
+			position: absolute;
+			font-family: sans-serif;
+			color: black;
+			top: 0;
+			left: 0;
+			content: 'play';
+		}
+
+		.player .button.pause::before {
+			content: 'pause';
+		}
+
+		.player .progress-bar {
+			height: 30px;
+			border: 2px solid white;
+			box-sizing: border-box;
+			width: 200px;
+			display: inline-block;
+			margin-left: 10px;
+			position: relative;
+			overflow: hidden;
+		}
+
+		.player .progress-bar div {
+			height: 100%;
+			width: 100%;
+			position: absolute;
+			top: 0;
+			right: 100%;
+			background: white;
+		}
 
 	</style>
 </head>
@@ -53,50 +90,69 @@
 	</div>
 	<div class="container"></div>
 	<script>
-	var renderOptions = {
-		width: 600,
-		height: 600,
-		strokeStyle: 'white',
-		fillStyle: '#111',
-		lineWidth: 3,
-		padding: [100, 150],
-		lines: 60,
-		points: 20
-	};
+	// var renderOptions = {
+	// 	width: 600,
+	// 	height: 600,
+	// 	strokeStyle: 'white',
+	// 	fillStyle: '#111',
+	// 	lineWidth: 3,
+	// 	padding: [100, 150],
+	// 	lines: 60,
+	// 	points: 20
+	// };
 
-	var uP = new UnknownPleasures(renderOptions);
-	var cvs = uP.init();
+	// var uP = new UnknownPleasures(renderOptions);
+	// var cvs = uP.init();
 
-	var containerCvs = document.getElementsByClassName('container')[0];
+	// var containerCvs = document.getElementsByClassName('container')[0];
 	var containerAudio = document.getElementsByClassName('container')[2];
-	var microphoneBtn = document.getElementsByClassName('microphone')[0];
+	// var microphoneBtn = document.getElementsByClassName('microphone')[0];
 
-	uP.preRender();
-	uP.render();
-	containerCvs.appendChild(cvs);
-	containerAudio.appendChild(uP.audio);
+	// uP.preRender();
+	// uP.render();
+	// containerCvs.appendChild(cvs);
+	// containerAudio.appendChild(uP.audio);
 
-	// uP.setSource('sound.mp3');
+	// // uP.setSource('sound.mp3');
+
+	// function handleFileSelect(evt) {
+	// 	var file = evt.target.files[0];
+	// 	var reader = new FileReader();
+
+	// 	reader.onload = function (e) {
+	// 		uP.setSource(e.target.result);
+	// 	};
+
+	// 	//reader.readAsArrayBuffer(file);
+	// 	if (file) {
+	// 		reader.readAsDataURL(file);
+	// 	}
+	// }
+
+	// document.getElementById('file').addEventListener('change', handleFileSelect, false);
+
+	// microphoneBtn.addEventListener('click', function (e) {
+	// 	uP.setSource();
+	// });
+
+	var player = new Player(200, 30);
 
 	function handleFileSelect(evt) {
 		var file = evt.target.files[0];
 		var reader = new FileReader();
 
 		reader.onload = function (e) {
-			uP.setSource(e.target.result);
+			player.setSource(e.target.result);
 		};
 
-		//reader.readAsArrayBuffer(file);
 		if (file) {
-			reader.readAsDataURL(file);
+			reader.readAsArrayBuffer(file);
 		}
 	}
 
 	document.getElementById('file').addEventListener('change', handleFileSelect, false);
 
-	microphoneBtn.addEventListener('click', function (e) {
-		uP.setSource();
-	});
+	containerAudio.appendChild(player.ui.el);
 
 	</script>
 </body>
