@@ -254,7 +254,9 @@ Player.prototype._getTimeByPosition = function (position) {
 	return duration * position;
 };
 
-Player.prototype._getPosition = function () {
+Player.prototype.getPosition = function () {
+	if (!this.source) return; // TODO: change to this.status
+
 	var duration = this.source.buffer.duration;
 	var currentTime = this.audioCtx.currentTime - this._startTime;
 
@@ -270,6 +272,8 @@ Player.prototype.setPosition = function (position) {
 };
 
 Player.prototype.play = function (position) {
+	if (!this.source) return; // TODO: change to this.status
+
 	position = position !== undefined ? position : this._pausePosition;
 
 	var fromTime = this._getTimeByPosition(position);
@@ -283,7 +287,7 @@ Player.prototype.play = function (position) {
 };
 
 Player.prototype.pause = function () {
-	this._pausePosition = this._getPosition();
+	this._pausePosition = this.getPosition();
 
 	this.reset();
 };
@@ -381,7 +385,7 @@ Player.UI.prototype.render = function () {
 	var self = this;
 
 	function draw () {
-		var position = self.player._getPosition();
+		var position = self.player.getPosition();
 
 		self._setProgress(position);
 		rAF(draw);
