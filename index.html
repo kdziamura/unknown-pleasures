@@ -5,6 +5,7 @@
 	<title>Unknown Pleasures</title>
 	<script src="complex.js/Complex.js"></script>
 	<script src="script.js"></script>
+	<script src="template.js"></script>
 	<style>
 		body {
 			display: flex;
@@ -22,42 +23,40 @@
 			padding: .7rem;
 		}
 
-		.microphone, label {
-			padding: .7rem;
-			border: 2px solid white;
-			display: inline-block;
-			cursor: pointer;
-		}
 
-		.microphone:hover,
-		label:hover {
-			background: rgba(255,255,255,.1);
-		}
 
 		input[type="file"] {
 			display: none;
 		}
 
 
-		.player .button {
+		.player > div,
+		.player > label {
+			margin: 0 0.5rem;
+		}
+
+		.player .button,
+		.player .status {
 			width: 30px;
 			height: 30px;
-			background: white;
+			border: 2px solid white;
 			display: inline-block;
-			position: relative;
+			cursor: pointer;
+			box-sizing: border-box;
 		}
 
-		.player .button::before {
-			position: absolute;
-			font-family: sans-serif;
-			color: black;
-			top: 0;
-			left: 0;
-			content: 'play';
+		.player .status {
+			border-radius: 50%;
 		}
 
-		.player .button.pause::before {
-			content: 'pause';
+		.player .button:hover,
+		.player .status:hover {
+			background: rgba(255, 255, 255, .1);
+		}
+
+		.player .status.pause {
+			background: white;
+			transform: rotateZ(0);
 		}
 
 		.player .progress-bar {
@@ -66,7 +65,6 @@
 			box-sizing: border-box;
 			width: 200px;
 			display: inline-block;
-			margin-left: 10px;
 			position: relative;
 			overflow: hidden;
 		}
@@ -80,14 +78,11 @@
 			background: white;
 		}
 
+
 	</style>
 </head>
 <body>
 	<div class="container"></div>
-	<div class="container">
-		<div class="microphone">Use microphone</div>
-		<label>or select file<input type="file" id="file" name="sound" /></label>
-	</div>
 	<div class="container"></div>
 	<script>
 	var renderOptions = {
@@ -103,39 +98,34 @@
 
 
 	var containerCvs = document.getElementsByClassName('container')[0];
-	var containerAudio = document.getElementsByClassName('container')[2];
-	// var microphoneBtn = document.getElementsByClassName('microphone')[0];
+	var containerAudio = document.getElementsByClassName('container')[1];
 
 
 	var player = new Player();
-	player.ui.render();
-
 	var uP = new UnknownPleasures(player.audioCtx, renderOptions);
 
-	var cvs = uP.init();
 	player.addNode(uP.analyser);
 
-	uP.render();
+	player.on('play', function () {
+		console.log('play');
+	});
+	player.on('pause', function () {
+		console.log('pause');
+	});
+	player.on('stop', function () {
+		console.log('stop');
+	});
+	player.on('load', function () {
+		console.log('load');
+		player.play();
+	});
+	player.on('ended', function () {
+		console.log('ended');
+		player.play();
+	});
 
-	containerCvs.appendChild(cvs);
 
-
-
-	function handleFileSelect(evt) {
-		var file = evt.target.files[0];
-		var reader = new FileReader();
-
-		reader.onload = function (e) {
-			player.setSource(e.target.result);
-		};
-
-		if (file) {
-			reader.readAsArrayBuffer(file);
-		}
-	}
-
-	document.getElementById('file').addEventListener('change', handleFileSelect, false);
-
+	containerCvs.appendChild(uP.el);
 	containerAudio.appendChild(player.ui.el);
 
 	</script>

@@ -14,16 +14,14 @@ function UnknownPleasures (audioCtx, options) {
 	this.audioCtx = audioCtx;
 	this.options = options;
 	this.lines = new Array(options.lines);
-}
 
-UnknownPleasures.prototype.init = function (canvas) {
-	canvas = canvas || document.createElement('canvas');
-	var ctx = this.ctx = canvas.getContext('2d');
+	this.el = document.createElement('canvas');
+	var ctx = this.ctx = this.el.getContext('2d');
 	var options = this.options;
 
 	// setup canvas
-	ctx.canvas.width = options.width;
-	ctx.canvas.height = options.height;
+	this.el.width = options.width;
+	this.el.height = options.height;
 	ctx.strokeStyle = options.strokeStyle;
 	ctx.lineWidth = options.lineWidth;
 	ctx.fillStyle = options.fillStyle;
@@ -39,7 +37,7 @@ UnknownPleasures.prototype.init = function (canvas) {
 	ctx.fillRect(0, 0, options.width, options.height);
 	ctx.translate(options.padding[1], options.padding[0]);
 
-	return canvas;
+	this.render();
 };
 
 UnknownPleasures.prototype.renderLine = function (line) {
@@ -206,6 +204,7 @@ function Player () {
 	this._pausePosition = 0;
 	this.source = null;
 	this._nodes = [];
+	this.handlers = [];
 
 	this.ui = new Player.UI(this);
 }
@@ -215,30 +214,46 @@ function Player () {
  * @param {ArrayBuffer} src source
  */
 Player.prototype.setSource = function (src) {
-	this.reset();
-	this.source = null;
-	this.audioCtx.decodeAudioData(src, this.connect.bind(this));
+	if (this.isPlaying) {
+		this.stop();
+	}
+
+
+	this.audioCtx.decodeAudioData(src, function (audioBuffer) {
+		this.connect(audioBuffer);
+		this.trigger('load');
+	}.bind(this));
 };
 
 Player.prototype.connect = function (buffer) {
 	var source, i;
 
 	if (this.source) {
-		this.stop();
+		this.reset();
 		this.source.disconnect();
 	}
 
 	source = this.audioCtx.createBufferSource();
 
-	source.onended = this.reset.bind(this);
-	source.buffer = buffer || this.source.buffer;
+	source.onended = this._onended.bind(this);
+
+	if (buffer) {
+		source.buffer = buffer;
+	} else {
+		source.buffer = this.source.buffer;
+	}
+
 	this.source = source;
 
+	this._connectNodes();
+
+	this.source.connect(this.audioCtx.destination);
+};
+
+Player.prototype._connectNodes = function () {
 	for (i = 0; i < this._nodes.length; i++) {
 		this.source.connect(this._nodes[i]);
 	}
-
-	this.source.connect(this.audioCtx.destination);
 };
 
 Player.prototype.reset = function () {
@@ -255,7 +270,7 @@ Player.prototype._getTimeByPosition = function (position) {
 };
 
 Player.prototype.getPosition = function () {
-	if (!this.source) return; // TODO: change to this.status
+	if (!this.source || !this.source.buffer) return; // TODO: change to this.status
 
 	var duration = this.source.buffer.duration;
 	var currentTime = this.audioCtx.currentTime - this._startTime;
@@ -274,7 +289,13 @@ Player.prototype.setPosition = function (position) {
 Player.prototype.play = function (position) {
 	if (!this.source) return; // TODO: change to this.status
 
-	position = position !== undefined ? position : this._pausePosition;
+	var fromTime;
+	var isTrigger = false;
+
+	if (position === undefined) {
+		position = this._pausePosition;
+		isTrigger = true;
+	}
 
 	var fromTime = this._getTimeByPosition(position);
 
@@ -284,40 +305,99 @@ Player.prototype.play = function (position) {
 
 	this._startTime = this.audioCtx.currentTime - fromTime;
 	this.source.start(0, fromTime);
+
+	if (isTrigger) {
+		this.trigger('play');
+	}
 };
 
 Player.prototype.pause = function () {
 	this._pausePosition = this.getPosition();
-
 	this.reset();
+
+	this.trigger('pause');
 };
 
 Player.prototype.stop = function () {
 	this._pausePosition = 0;
-
 	this.reset();
+
+	this.trigger('stop');
 };
 
 Player.prototype.addNode = function (node) {
 	this._nodes.push(node);
 };
 
+Player.prototype._onended = function () {
+	var currentTime = this.audioCtx.currentTime;
+	if (currentTime >= this._startTime + this.source.buffer.duration) {
+		this.stop();
+		this.trigger('ended');
+	}
+};
 
 
 
 
 
-Player.UI = function (player) {
-	var wrapper = document.createElement('div');
-	var playBtn = document.createElement('div');
-	var progressBarWrapper = document.createElement('div');
-	var progress = document.createElement('div');
+Player.prototype.trigger = function (eventName) {
+	var handlers = this.handlers[eventName];
+	var i;
 
-	wrapper.classList.add('player');
-	playBtn.classList.add('button');
-	progressBarWrapper.classList.add('progress-bar');
+	if (handlers) {
+		for (i = 0; i < handlers.length; i++) {
+			handlers[i]();
+		}
+	}
+};
 
-	progressBarWrapper.appendChild(progress);
+Player.prototype.on = function (eventName, handler) {
+	if (!this.handlers[eventName]) {
+		this.handlers[eventName] = [];
+	}
+
+	this.handlers[eventName].push(handler);
+};
+
+Player.prototype.off = function (eventName, handler) {
+	var handlers = this.handlers[eventName];
+	var index;
+
+
+	if (handlers) {
+
+		if (handler) {
+			index = handlers.indexOf(handler);
+
+			if (index != -1) {
+				handlers.splice(index, 1);
+			}
+		} else {
+			this.handlers[eventName] = [];
+		}
+	}
+};
+
+
+
+
+
+Player.prototype.record = function () {
+	navigator.getUserMedia({audio: true},
+
+		function(stream) {
+			this._stream = stream;
+			this.source = this.audioCtx.createMediaStreamSource(stream);
+			this._connectNodes();
+		}.bind(this),
+
+		function(err) {
+			console.log("The following error occured: " + err);
+		}
+	);
+};
+
 
 
 
@@ -346,15 +426,26 @@ Player.UI = function (player) {
 	this.el = elem.el;
 	this.player = player;
 	this._bindEvents();
+
+	this.render();
 };
 
 Player.UI.prototype._setProgress = function (progress) {
-	this.progress.style.transform = 'translateX(' + (progress*100) + '%)';
+	this.elems.progress.style.transform = 'translateX(' + (progress*100) + '%)';
 };
 
 Player.UI.prototype._bindEvents = function () {
-	this.playBtn.addEventListener('click', this._playBtnClick.bind(this));
-	this.progressBarWrapper.addEventListener('click', this._progressBarClick.bind(this));
+	this.elems.playBtn.addEventListener('click', this._playBtnClick.bind(this));
+	this.elems.progressBar.addEventListener('click', this._progressBarClick.bind(this));
+	this.elems.fileSelector.addEventListener('change', this._selectFile.bind(this));
+
+	this.player.on('play', function () {
+		this.elems.playBtn.classList.add('pause');
+	}.bind(this));
+
+	this.player.on('pause', this._onPause.bind(this));
+	this.player.on('stop', this._onPause.bind(this));
+	this.player.on('load', this._onPause.bind(this));
 };
 
 Player.UI.prototype.helpers = {};
@@ -365,11 +456,10 @@ Player.UI.prototype.helpers._getMouseClick = function (e, element) {
 	var canvasY = 0;
 	var currentElement = element;
 
-	do{
+	do {
 		totalOffsetX += currentElement.offsetLeft - currentElement.scrollLeft;
 		totalOffsetY += currentElement.offsetTop - currentElement.scrollTop;
-	}
-	while(currentElement = currentElement.offsetParent)
+	} while(currentElement = currentElement.offsetParent)
 
 	canvasX = e.pageX - totalOffsetX;
 	canvasY = e.pageY - totalOffsetY;
@@ -380,8 +470,8 @@ Player.UI.prototype.helpers._getMouseClick = function (e, element) {
 // Handlers
 
 Player.UI.prototype._progressBarClick = function (e) {
-	var clickPos = this.helpers._getMouseClick(e, this.progressBarWrapper);
-	var position = clickPos.x / this.progressBarWrapper.offsetWidth;
+	var clickPos = this.helpers._getMouseClick(e, this.elems.progressBar);
+	var position = clickPos.x / this.elems.progressBar.offsetWidth;
 	this.player.setPosition(position);
 };
 
@@ -390,12 +480,30 @@ Player.UI.prototype._playBtnClick = function (e) {
 
 	if (player.isPlaying) {
 		this.player.pause();
-		this.playBtn.classList.remove('pause');
 	} else {
 		this.player.play();
-		this.playBtn.classList.add('pause');
 	}
 };
+
+Player.UI.prototype._selectFile = function(e) {
+	var file = e.target.files[0];
+	var reader = new FileReader();
+	var player = this.player;
+
+	reader.onload = function (e) {
+		player.setSource(e.target.result);
+	};
+
+	if (file) {
+		reader.readAsArrayBuffer(file);
+	}
+};
+
+Player.UI.prototype._onPause = function() {
+	this.elems.playBtn.classList.remove('pause');
+};
+
+// Render
 
 Player.UI.prototype.render = function () {
 	var rAF = window.requestAnimationFrame;
