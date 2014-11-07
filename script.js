@@ -319,14 +319,31 @@ Player.UI = function (player) {
 
 	progressBarWrapper.appendChild(progress);
 
-	wrapper.appendChild(playBtn);
-	wrapper.appendChild(progressBarWrapper);
 
-	this.el = wrapper;
-	this.playBtn = playBtn;
-	this.progressBarWrapper = progressBarWrapper;
-	this.progress = progress;
 
+
+Player.UI = function (player) {
+	var template = {
+		'.status': {
+			$: 'playBtn'
+		},
+		'.progress-bar': {
+			$: 'progressBar',
+			'div': {
+				$: 'progress'
+			}
+		},
+		'label.button': {
+			'input[type=file]': {
+				$: 'fileSelector'
+			}
+		}
+	};
+
+	var elem = new createDOM('.player', template);
+	this.elems = elem.storage;
+
+	this.el = elem.el;
 	this.player = player;
 	this._bindEvents();
 };
