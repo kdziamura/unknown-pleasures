@@ -475,9 +475,6 @@ Player.UI = function (player) {
 			'input[type=file]': {
 				$: 'fileSelector'
 			}
-		},
-		'.button.record': {
-			$: 'recBtn'
 		}
 	};
 
