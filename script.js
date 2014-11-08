@@ -459,6 +459,9 @@ Player.prototype.stopRecord = function stopRecord () {
 
 Player.UI = function (player) {
 	var template = {
+		'.button.record': {
+			$: 'recBtn'
+		},
 		'.button.status': {
 			$: 'playBtn'
 		},
