@@ -582,8 +582,12 @@ Player.UI.prototype._selectFile = function(e) {
 	}.bind(this);
 
 	if (file) {
-		reader.readAsArrayBuffer(file);
-		this.elems.playBtn.classList.add('loading');
+		if (file.type.indexOf('audio') !== -1) {
+			reader.readAsArrayBuffer(file);
+			this.elems.playBtn.classList.add('loading');
+		} else {
+			console.log('Not valid file type: ' + file.type);
+		}
 	}
 };
 
