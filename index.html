@@ -35,8 +35,7 @@
 			margin: 0 0.5rem;
 		}
 
-		.player .button,
-		.player .status {
+		.player .button {
 			width: 30px;
 			height: 30px;
 			border: 2px solid white;
@@ -44,19 +43,35 @@
 			cursor: pointer;
 			box-sizing: border-box;
 		}
+		.player .button:hover {
+			background: rgba(255, 255, 255, .1);
+		}
 
-		.player .status {
+
+
+
+		.player .status,
+		.player .record {
 			border-radius: 50%;
 		}
 
-		.player .button:hover,
-		.player .status:hover {
-			background: rgba(255, 255, 255, .1);
+		.player .record {
+			border-color: brown;
 		}
 
 		.player .status.pause {
 			background: white;
 			transform: rotateZ(0);
+		}
+		.player .status.loading {
+			border-left-color: transparent;
+			border-right-color: transparent;
+			border-bottom-color: transparent;
+			-webkit-animation: .5s rotate infinite linear;
+			animation: .5s rotate infinite linear;
+		}
+		.player .record.in-progress {
+			background: brown;
 		}
 
 		.player .progress-bar {
@@ -76,6 +91,19 @@
 			top: 0;
 			right: 100%;
 			background: white;
+		}
+
+
+		@-webkit-keyframes rotate {
+			to {
+				transform: rotateZ(360deg);
+			}
+		}
+
+		@keyframes rotate {
+			to {
+				transform: rotateZ(360deg);
+			}
 		}
 
 
@@ -123,7 +151,9 @@
 		console.log('ended');
 		player.play();
 	});
-
+	player.on('error', function (e) {
+		console.log(e.message);
+	});
 
 	containerCvs.appendChild(uP.el);
 	containerAudio.appendChild(player.ui.el);

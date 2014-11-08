@@ -200,13 +200,17 @@ UnknownPleasures.prototype.setAnalyser = function (src) {
 
 function Player () {
 	this.audioCtx = new AudioContext();
-	this.isPlaying = false;
 	this._pausePosition = 0;
 	this.source = null;
 	this._nodes = [];
 	this.handlers = [];
 
+	this._defineStatuses();
+
 	this.ui = new Player.UI(this);
+
+	this.on('play', this.stopRecord.bind(this));
+	this.on('record', this.pause.bind(this));
 }
 
 /**
@@ -214,13 +218,14 @@ function Player () {
  * @param {ArrayBuffer} src source
  */
 Player.prototype.setSource = function (src) {
-	if (this.isPlaying) {
-		this.stop();
-	}
+	this.stop();
 
+	this._setStatus('pending', true);
 
 	this.audioCtx.decodeAudioData(src, function (audioBuffer) {
 		this.connect(audioBuffer);
+
+		this._setStatus('pending', false);
 		this.trigger('load');
 	}.bind(this));
 };
@@ -250,15 +255,16 @@ Player.prototype.connect = function (buffer) {
 	this.source.connect(this.audioCtx.destination);
 };
 
-Player.prototype._connectNodes = function () {
+Player.prototype._connectNodes = function (source) {
+	source = source || this.source;
+
 	for (i = 0; i < this._nodes.length; i++) {
-		this.source.connect(this._nodes[i]);
+		source.connect(this._nodes[i]);
 	}
 };
 
 Player.prototype.reset = function () {
-	if (this.isPlaying) {
-		this.isPlaying = false;
+	if (this.is('play')) {
 		this.source.stop();
 	}
 };
@@ -270,24 +276,35 @@ Player.prototype._getTimeByPosition = function (position) {
 };
 
 Player.prototype.getPosition = function () {
-	if (!this.source || !this.source.buffer) return; // TODO: change to this.status
+	if (this.is('play')) {
+		var duration = this.source.buffer.duration;
+		var currentTime = this.audioCtx.currentTime - this._startTime;
 
-	var duration = this.source.buffer.duration;
-	var currentTime = this.audioCtx.currentTime - this._startTime;
-
-	return this.isPlaying ? currentTime / duration : this._pausePosition;
+		return currentTime / duration;
+	} else {
+		return this._pausePosition;
+	}
 };
 
 Player.prototype.setPosition = function (position) {
-	if (this.isPlaying) {
+	if (this.is('play')) {
 		this.play(position);
-	} else {
+	} else if (this.source) {
 		this._pausePosition = position;
+	} else {
+		this.trigger('error', {
+			message: 'Can\'t get source'
+		});
 	}
 };
 
 Player.prototype.play = function (position) {
-	if (!this.source) return; // TODO: change to this.status
+	if (!this.source) {
+		this.trigger('error', {
+			message: 'Can\'t get source'
+		});
+		return;
+	}
 
 	var fromTime;
 	var isTrigger = false;
@@ -301,12 +318,11 @@ Player.prototype.play = function (position) {
 
 	this.connect();
 
-	this.isPlaying = true;
-
 	this._startTime = this.audioCtx.currentTime - fromTime;
 	this.source.start(0, fromTime);
 
 	if (isTrigger) {
+		this._setStatus('play', true);
 		this.trigger('play');
 	}
 };
@@ -315,6 +331,7 @@ Player.prototype.pause = function () {
 	this._pausePosition = this.getPosition();
 	this.reset();
 
+	this._setStatus('play', false);
 	this.trigger('pause');
 };
 
@@ -322,6 +339,7 @@ Player.prototype.stop = function () {
 	this._pausePosition = 0;
 	this.reset();
 
+	this._setStatus('play', false);
 	this.trigger('stop');
 };
 
@@ -337,17 +355,43 @@ Player.prototype._onended = function () {
 	}
 };
 
+// Status manager
+
+Player.prototype._defineStatuses = function(status) {
+	this._status = {
+		play: false,
+		record: false,
+		pending: false
+	};
+};
+
+Player.prototype._setStatus = function(status, value) {
+	if (status in this._status) {
+		this._status[status] = value;
+	} else {
+		console.log('Unknown status');
+	}
+};
+
+Player.prototype.is = function(status) {
+	if (status in this._status) {
+		return this._status[status];
+	} else {
+		console.log('Unknown status');
+	}
+};
 
 
 
+// Event manager
 
-Player.prototype.trigger = function (eventName) {
+Player.prototype.trigger = function (eventName, e) {
 	var handlers = this.handlers[eventName];
 	var i;
 
 	if (handlers) {
 		for (i = 0; i < handlers.length; i++) {
-			handlers[i]();
+			handlers[i](e);
 		}
 	}
 };
@@ -366,15 +410,10 @@ Player.prototype.off = function (eventName, handler) {
 
 
 	if (handlers) {
+		index = handlers.indexOf(handler);
 
-		if (handler) {
-			index = handlers.indexOf(handler);
-
-			if (index != -1) {
-				handlers.splice(index, 1);
-			}
-		} else {
-			this.handlers[eventName] = [];
+		if (index != -1) {
+			handlers.splice(index, 1);
 		}
 	}
 };
@@ -382,21 +421,37 @@ Player.prototype.off = function (eventName, handler) {
 
 
 
-
 Player.prototype.record = function () {
+	if (this.is('record') || this.is('pending')) return;
+
+	this._setStatus('pending', true);
+
 	navigator.getUserMedia({audio: true},
 
 		function(stream) {
 			this._stream = stream;
-			this.source = this.audioCtx.createMediaStreamSource(stream);
-			this._connectNodes();
+			this._connectNodes(this.audioCtx.createMediaStreamSource(stream));
+			this._setStatus('record', true);
+			this._setStatus('pending', false);
+			this.trigger('record');
 		}.bind(this),
 
 		function(err) {
+			this._setStatus('pending', false);
 			console.log("The following error occured: " + err);
-		}
+		}.bind(this)
 	);
 };
+
+Player.prototype.stopRecord = function stopRecord () {
+	if (this.is('record')) {
+		this._stream.stop();
+		this._stream = null;
+		this._setStatus('record', false);
+		this.trigger('recordstop');
+	}
+};
+
 
 
 
@@ -404,7 +459,7 @@ Player.prototype.record = function () {
 
 Player.UI = function (player) {
 	var template = {
-		'.status': {
+		'.button.status': {
 			$: 'playBtn'
 		},
 		'.progress-bar': {
@@ -417,6 +472,9 @@ Player.UI = function (player) {
 			'input[type=file]': {
 				$: 'fileSelector'
 			}
+		},
+		'.button.record': {
+			$: 'recBtn'
 		}
 	};
 
@@ -438,6 +496,7 @@ Player.UI.prototype._bindEvents = function () {
 	this.elems.playBtn.addEventListener('click', this._playBtnClick.bind(this));
 	this.elems.progressBar.addEventListener('click', this._progressBarClick.bind(this));
 	this.elems.fileSelector.addEventListener('change', this._selectFile.bind(this));
+	this.elems.recBtn.addEventListener('click', this._recBtnClick.bind(this));
 
 	this.player.on('play', function () {
 		this.elems.playBtn.classList.add('pause');
@@ -446,6 +505,19 @@ Player.UI.prototype._bindEvents = function () {
 	this.player.on('pause', this._onPause.bind(this));
 	this.player.on('stop', this._onPause.bind(this));
 	this.player.on('load', this._onPause.bind(this));
+
+
+
+	this.player.on('load', function() {
+		this.elems.playBtn.classList.remove('loading');
+	}.bind(this));
+
+	this.player.on('record', function () {
+		this.elems.recBtn.classList.add('in-progress');
+	}.bind(this));
+	this.player.on('recordstop', function () {
+		this.elems.recBtn.classList.remove('in-progress');
+	}.bind(this));
 };
 
 Player.UI.prototype.helpers = {};
@@ -478,10 +550,20 @@ Player.UI.prototype._progressBarClick = function (e) {
 Player.UI.prototype._playBtnClick = function (e) {
 	var player = this.player;
 
-	if (player.isPlaying) {
-		this.player.pause();
+	if (player.is('play')) {
+		player.pause();
 	} else {
-		this.player.play();
+		player.play();
+	}
+};
+
+Player.UI.prototype._recBtnClick = function() {
+	var player = this.player;
+
+	if (player.is('record')) {
+		player.stopRecord();
+	} else {
+		player.record();
 	}
 };
 
@@ -489,6 +571,8 @@ Player.UI.prototype._selectFile = function(e) {
 	var file = e.target.files[0];
 	var reader = new FileReader();
 	var player = this.player;
+
+	this.elems.playBtn.classList.add('loading');
 
 	reader.onload = function (e) {
 		player.setSource(e.target.result);
