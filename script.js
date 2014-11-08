@@ -572,14 +572,18 @@ Player.UI.prototype._selectFile = function(e) {
 	var reader = new FileReader();
 	var player = this.player;
 
-	this.elems.playBtn.classList.add('loading');
-
 	reader.onload = function (e) {
 		player.setSource(e.target.result);
 	};
 
+	reader.onerror = function (e) {
+		this.elems.playBtn.classList.remove('loading');
+		console.log('Error on loading file', e);
+	}.bind(this);
+
 	if (file) {
 		reader.readAsArrayBuffer(file);
+		this.elems.playBtn.classList.add('loading');
 	}
 };
 
