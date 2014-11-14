@@ -366,8 +366,14 @@ Player.prototype._defineStatuses = function(status) {
 };
 
 Player.prototype._setStatus = function(status, value) {
-	if (status in this._status) {
+	var prevStatus = this._status[status];
+	if (typeof prevStatus !== undefined) {
 		this._status[status] = value;
+		this.trigger('statuschanged', {
+			status: status,
+			prev: prevStatus,
+			now: value
+		});
 	} else {
 		console.log('Unknown status');
 	}

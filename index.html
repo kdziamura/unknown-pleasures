@@ -163,6 +163,9 @@
 	player.on('error', function (e) {
 		console.log(e.message);
 	});
+	player.on('statuschanged', function (e) {
+		console.log(e);
+	});
 
 	containerCvs.appendChild(uP.el);
 	containerAudio.appendChild(player.ui.el);
