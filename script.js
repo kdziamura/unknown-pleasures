@@ -373,6 +373,8 @@ Player.prototype.addNode = function (node) {
 };
 
 Player.prototype._onended = function () {
+	if (!this.source) { return; }
+
 	var currentTime = this.audioCtx.currentTime;
 	if (currentTime >= this._startTime + this.source.buffer.duration) {
 		this.stop();
