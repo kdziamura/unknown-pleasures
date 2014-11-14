@@ -17,7 +17,6 @@ function UnknownPleasures (audioCtx, options) {
 
 	this.el = document.createElement('canvas');
 	var ctx = this.ctx = this.el.getContext('2d');
-	var options = this.options;
 
 	// setup canvas
 	this.el.width = options.width;
@@ -38,7 +37,7 @@ function UnknownPleasures (audioCtx, options) {
 	ctx.translate(options.padding[1], options.padding[0]);
 
 	this.render();
-};
+}
 
 UnknownPleasures.prototype.renderLine = function (line) {
 	var a,b,c,d;
@@ -157,7 +156,7 @@ UnknownPleasures.prototype.render = function () {
 			self.updateData();
 		}
 
-		if (!(tempTranslateY % 5)) {
+		if (tempTranslateY % 5 === 0) {
 			self.updateData(true);
 		}
 		rAF(anim);
@@ -339,7 +338,7 @@ Player.prototype.play = function (position) {
 		isTrigger = true;
 	}
 
-	var fromTime = this._getTimeByPosition(position);
+	fromTime = this._getTimeByPosition(position);
 
 	this.connect();
 
@@ -566,7 +565,8 @@ Player.UI.prototype.helpers._getMouseClick = function (e, element) {
 	do {
 		totalOffsetX += currentElement.offsetLeft - currentElement.scrollLeft;
 		totalOffsetY += currentElement.offsetTop - currentElement.scrollTop;
-	} while(currentElement = currentElement.offsetParent)
+		currentElement = currentElement.offsetParent;
+	} while (currentElement);
 
 	canvasX = e.pageX - totalOffsetX;
 	canvasY = e.pageY - totalOffsetY;
