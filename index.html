@@ -32,7 +32,7 @@
 
 		.player > div,
 		.player > label {
-			margin: 0 0.5rem;
+			margin: 0.5rem;
 		}
 
 		.player .button {
@@ -50,13 +50,13 @@
 
 
 
-		.player .status,
+		.player .play,
 		.player .record {
 			border-radius: 50%;
 			padding: 4px;
 		}
 
-		.player .status.pause::after,
+		.player .play.pause::after,
 		.player .record.in-progress::after {
 			content: '';
 			width: 100%;
@@ -69,10 +69,10 @@
 			border-color: brown;
 		}
 
-		.player .status.pause::after {
+		.player .play.pause::after {
 			background: white;
 		}
-		.player .status.loading {
+		.player .play.loading {
 			border-left-color: transparent;
 			border-right-color: transparent;
 			border-bottom-color: transparent;
@@ -100,6 +100,11 @@
 			top: 0;
 			right: 100%;
 			background: white;
+		}
+
+		.player .status.hide {
+			transition: opacity .3s 1s;
+			opacity: 0;
 		}
 
 

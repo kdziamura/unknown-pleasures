@@ -494,7 +494,7 @@ Player.UI = function (player) {
 		'.button.record': {
 			$: 'recBtn'
 		},
-		'.button.status': {
+		'.button.play': {
 			$: 'playBtn'
 		},
 		'.progress-bar': {
@@ -507,6 +507,9 @@ Player.UI = function (player) {
 			'input[type=file]': {
 				$: 'fileSelector'
 			}
+		},
+		'.status': {
+			$: 'status'
 		}
 	};
 
@@ -551,6 +554,17 @@ Player.UI.prototype._bindEvents = function () {
 	}.bind(this));
 	this.player.on('recordstop', function () {
 		this.elems.recBtn.classList.remove('in-progress');
+	}.bind(this));
+
+
+	player.on('error', function (e) {
+		this.elems.status.innerHTML = 'ERORR: ' + e.message;
+		this.elems.status.classList.add('hide');
+	}.bind(this));
+
+	this.elems.status.addEventListener('transitionend', function (e) {
+		this.elems.status.innerHTML = '';
+		this.elems.status.classList.remove('hide');
 	}.bind(this));
 };
 
