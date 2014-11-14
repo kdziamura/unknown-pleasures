@@ -217,17 +217,42 @@ function Player () {
  * Set source of player
  * @param {ArrayBuffer} src source
  */
-Player.prototype.setSource = function (src) {
-	this.stop();
-
-	this._setStatus('pending', true);
-
+Player.prototype._setSource = function (src) {
 	this.audioCtx.decodeAudioData(src, function (audioBuffer) {
 		this.connect(audioBuffer);
 
 		this._setStatus('pending', false);
 		this.trigger('load');
 	}.bind(this));
+};
+
+Player.prototype.readFile = function (file) {
+	var reader = new FileReader();
+
+	reader.onload = function (e) {
+		this._setSource(e.target.result);
+	}.bind(this);
+
+	reader.onerror = function (e) {
+		this._setStatus('pending', false);
+		this.trigger('error', {
+			message: 'Error on loading file'
+		});
+	};
+
+	if (file) {
+		if (file.type.indexOf('audio') !== -1) {
+			this.stop();
+			this.source = null;
+			this._setStatus('pending', true);
+			reader.readAsArrayBuffer(file);
+			this.trigger('loadstart');
+		} else {
+			this.trigger('error', {
+				message: 'Not valid file type: ' + file.type
+			});
+		}
+	}
 };
 
 Player.prototype.connect = function (buffer) {
@@ -512,9 +537,11 @@ Player.UI.prototype._bindEvents = function () {
 	this.player.on('stop', this._onPause.bind(this));
 	this.player.on('load', this._onPause.bind(this));
 
+	this.player.on('loadstart', function () {
+		this.elems.playBtn.classList.add('loading');
+	}.bind(this));
 
-
-	this.player.on('load', function() {
+	this.player.on('load', function () {
 		this.elems.playBtn.classList.remove('loading');
 	}.bind(this));
 
@@ -574,27 +601,7 @@ Player.UI.prototype._recBtnClick = function() {
 };
 
 Player.UI.prototype._selectFile = function(e) {
-	var file = e.target.files[0];
-	var reader = new FileReader();
-	var player = this.player;
-
-	reader.onload = function (e) {
-		player.setSource(e.target.result);
-	};
-
-	reader.onerror = function (e) {
-		this.elems.playBtn.classList.remove('loading');
-		console.log('Error on loading file', e);
-	}.bind(this);
-
-	if (file) {
-		if (file.type.indexOf('audio') !== -1) {
-			reader.readAsArrayBuffer(file);
-			this.elems.playBtn.classList.add('loading');
-		} else {
-			console.log('Not valid file type: ' + file.type);
-		}
-	}
+	this.player.readFile(e.target.files[0]);
 };
 
 Player.UI.prototype._onPause = function() {
