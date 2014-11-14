@@ -528,31 +528,33 @@ Player.UI.prototype._setProgress = function (progress) {
 };
 
 Player.UI.prototype._bindEvents = function () {
+	var player = this.player;
+
 	this.elems.playBtn.addEventListener('click', this._playBtnClick.bind(this));
 	this.elems.progressBar.addEventListener('click', this._progressBarClick.bind(this));
 	this.elems.fileSelector.addEventListener('change', this._selectFile.bind(this));
 	this.elems.recBtn.addEventListener('click', this._recBtnClick.bind(this));
 
-	this.player.on('play', function () {
+	player.on('play', function () {
 		this.elems.playBtn.classList.add('pause');
 	}.bind(this));
 
-	this.player.on('pause', this._onPause.bind(this));
-	this.player.on('stop', this._onPause.bind(this));
-	this.player.on('load', this._onPause.bind(this));
+	player.on('pause', this._onPause.bind(this));
+	player.on('stop', this._onPause.bind(this));
+	player.on('load', this._onPause.bind(this));
 
-	this.player.on('loadstart', function () {
+	player.on('loadstart', function () {
 		this.elems.playBtn.classList.add('loading');
 	}.bind(this));
 
-	this.player.on('load', function () {
+	player.on('load', function () {
 		this.elems.playBtn.classList.remove('loading');
 	}.bind(this));
 
-	this.player.on('record', function () {
+	player.on('record', function () {
 		this.elems.recBtn.classList.add('in-progress');
 	}.bind(this));
-	this.player.on('recordstop', function () {
+	player.on('recordstop', function () {
 		this.elems.recBtn.classList.remove('in-progress');
 	}.bind(this));
 
