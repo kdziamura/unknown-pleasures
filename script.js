@@ -248,7 +248,7 @@ Player.prototype.readFile = function (file) {
 			this.trigger('loadstart');
 		} else {
 			this.trigger('error', {
-				message: 'Not valid file type: ' + file.type
+				message: 'Not valid file type ' + file.type
 			});
 		}
 	}
