@@ -1,22 +1,29 @@
-class createDOM
+class createNode
 	constructor: (wrapper, template) ->
 		@storage = {}
 		@el = @parseQuery wrapper
-		@renderTemplate(template, @el)
+		@renderTemplate template, @el
 
 	renderTemplate: (template, parentNode) ->
-		node = null;
+		commands = template.split /(\+|\>|\^)/
+		currentNode = null
 
-		for key, value of template
-			if key is '$'
-				@storage[value] = parentNode
-			else
-				node = @parseQuery key
-				parentNode.appendChild node
-				@renderTemplate value, node
+		for command in commands
+			switch command
+				when '+'
+					no
+				when '>'
+					parentNode = currentNode
+				when '^'
+					parentNode = parentNode.parentNode
+				else
+					[query, save] = command.split '$'
+					currentNode = @parseQuery query
+					@storage[save] = currentNode
+					parentNode.appendChild currentNode
 
 	parseQuery: (query) ->
-		tokens = query.split(/(?=\.)|(?=#)|(?=\[)/)
+		tokens = query.split /(?=\.)|(?=#)|(?=\[)/
 		elem =
 			tag: 'div'
 			id: null

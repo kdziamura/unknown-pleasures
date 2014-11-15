@@ -490,30 +490,17 @@ Player.prototype.stopRecord = function stopRecord () {
 
 
 Player.UI = function (player) {
-	var template = {
-		'.button.record': {
-			$: 'recBtn'
-		},
-		'.button.play': {
-			$: 'playBtn'
-		},
-		'.progress-bar': {
-			$: 'progressBar',
-			'div': {
-				$: 'progress'
-			}
-		},
-		'label.button': {
-			'input[type=file]': {
-				$: 'fileSelector'
-			}
-		},
-		'.status': {
-			$: 'status'
-		}
-	};
+	var template =
+	'.button.record$recBtn+' +
+	'.button.play$playBtn+' +
+	'.progress-bar$progressBar>' +
+		'div$progress^' +
+	'label.button>' +
+		// '{open}+' +
+		'input[type=file]$fileSelector^' +
+	'.status$status';
 
-	var elem = new createDOM('.player', template);
+	var elem = new createNode('.player', template);
 	this.elems = elem.storage;
 
 	this.el = elem.el;
