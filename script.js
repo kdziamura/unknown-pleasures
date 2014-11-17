@@ -533,51 +533,58 @@ Player.UI = function (player) {
 
 Player.UI.prototype._bindEvents = function () {
 	var player = this.player;
+	var onPause = this._onPause.bind(this);
+	var elems = this.elems;
 
-	this.elems.playBtn.addEventListener('click', this._playBtnClick.bind(this));
-	this.elems.fileSelector.addEventListener('change', this._selectFile.bind(this));
-	this.elems.recBtn.addEventListener('click', this._recBtnClick.bind(this));
+	// Interaction
 
-	this.helpers.slider(this.elems.progressBar, this.elems.progress, this.player.setPosition.bind(this.player));
-	this.helpers.slider(this.elems.volumeBar, this.elems.volume, this.player.volume.bind(this.player), true);
+	elems.playBtn.addEventListener('click', this._playBtnClick.bind(this));
+	elems.recBtn.addEventListener('click', this._recBtnClick.bind(this));
+
+	elems.fileSelector.addEventListener('change', this._selectFile.bind(this));
+
+	this.helpers.slider(elems.progressBar, elems.progress, player.setPosition.bind(player));
+	this.helpers.slider(elems.volumeBar, elems.volume, player.volume.bind(player), true);
+
+	// Model listeners
 
 	player.on('volumechange', function (e) {
-		this.elems.volume.style.transform = 'translateX(' + (e.value * 100) + '%)';
-	}.bind(this));
+		elems.volume.style.transform = 'translateX(' + (e.value * 100) + '%)';
+	});
 
 	player.on('play', function () {
-		this.elems.playBtn.classList.add('pause');
-	}.bind(this));
+		elems.playBtn.classList.add('pause');
+	});
 
-	player.on('pause', this._onPause.bind(this));
-	player.on('stop', this._onPause.bind(this));
-	player.on('load', this._onPause.bind(this));
+	player.on('pause', onPause);
+	player.on('stop', onPause);
+	player.on('load', onPause);
 
 	player.on('loadstart', function () {
-		this.elems.playBtn.classList.add('loading');
-	}.bind(this));
+		elems.playBtn.classList.add('loading');
+	});
 
 	player.on('load', function () {
-		this.elems.playBtn.classList.remove('loading');
-	}.bind(this));
+		elems.playBtn.classList.remove('loading');
+	});
 
 	player.on('record', function () {
-		this.elems.recBtn.classList.add('in-progress');
-	}.bind(this));
+		elems.recBtn.classList.add('in-progress');
+	});
 	player.on('recordstop', function () {
-		this.elems.recBtn.classList.remove('in-progress');
-	}.bind(this));
+		elems.recBtn.classList.remove('in-progress');
+	});
 
 
 	player.on('error', function (e) {
-		this.elems.status.innerHTML = 'ERORR: ' + e.message;
-		this.elems.status.classList.add('hide');
-	}.bind(this));
+		elems.status.innerHTML = 'ERORR: ' + e.message;
+		elems.status.classList.add('hide');
+	});
 
-	this.elems.status.addEventListener('transitionend', function (e) {
-		this.elems.status.innerHTML = '';
-		this.elems.status.classList.remove('hide');
-	}.bind(this));
+	elems.status.addEventListener('transitionend', function (e) {
+		elems.status.innerHTML = '';
+		elems.status.classList.remove('hide');
+	});
 };
 
 Player.UI.prototype.helpers = {};
