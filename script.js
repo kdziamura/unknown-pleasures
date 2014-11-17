@@ -298,7 +298,12 @@ Player.prototype.reset = function () {
 Player.prototype.volume = function (value) {
 	var gain = this._gainNode.gain;
 	if (typeof value !== 'undefined') {
-		gain.value = value;
+		if (gain.value !== value) {
+			gain.value = value;
+			this.trigger('volumechange', {
+				value: value
+			});
+		}
 	}
 	return gain.value;
 };
@@ -536,6 +541,10 @@ Player.UI.prototype._bindEvents = function () {
 	this.helpers.slider(this.elems.progressBar, this.elems.progress, this.player.setPosition.bind(this.player));
 	this.helpers.slider(this.elems.volumeBar, this.elems.volume, this.player.volume.bind(this.player), true);
 
+	player.on('volumechange', function (e) {
+		this.elems.volume.style.transform = 'translateX(' + (e.value * 100) + '%)';
+	}.bind(this));
+
 	player.on('play', function () {
 		this.elems.playBtn.classList.add('pause');
 	}.bind(this));
@@ -586,7 +595,6 @@ Player.UI.prototype.helpers.slider = function (wrapper, progressElem, callback, 
 		}
 
 		callback(value);
-		progressElem.style.transform = 'translateX(' + (value * 100) + '%)';
 	}
 
 	function mousedown(e) {
