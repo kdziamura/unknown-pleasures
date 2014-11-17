@@ -203,6 +203,11 @@ function Player () {
 
 	this._defineStatuses();
 
+	this.analyser = this.audioCtx.createAnalyser();
+	this.addNode(this.analyser);
+	this._gainNode = this.audioCtx.createGain();
+	this.addNode(this._gainNode);
+
 	this.ui = new Player.UI(this);
 
 	this.on('play', this.stopRecord.bind(this));
@@ -272,22 +277,30 @@ Player.prototype.connect = function (buffer) {
 	this.source = source;
 
 	this._connectNodes();
-
-	this.source.connect(this.audioCtx.destination);
 };
 
 Player.prototype._connectNodes = function (source) {
-	source = source || this.source;
+	var node = source || this.source;
 
 	for (i = 0; i < this._nodes.length; i++) {
-		source.connect(this._nodes[i]);
+		node.connect(this._nodes[i]);
+		node = this._nodes[i];
 	}
+	node.connect(this.audioCtx.destination);
 };
 
 Player.prototype.reset = function () {
 	if (this.is('play')) {
 		this.source.stop();
 	}
+};
+
+Player.prototype.volume = function (value) {
+	var gain = this._gainNode.gain;
+	if (typeof value !== 'undefined') {
+		gain.value = value;
+	}
+	return gain.value;
 };
 
 Player.prototype._getTimeByPosition = function (position) {
@@ -492,6 +505,8 @@ Player.UI = function (player) {
 	'.button.play$playBtn+' +
 	'.progress-bar$progressBar>' +
 		'div$progress^' +
+	'.progress-bar$volumeBar>' +
+		'div$volume^' +
 	'label.button>' +
 		// '{open}+' +
 		'input[type=file]$fileSelector^' +
@@ -507,15 +522,12 @@ Player.UI = function (player) {
 	this.render();
 };
 
-Player.UI.prototype._setProgress = function (progress) {
-	this.elems.progress.style.transform = 'translateX(' + (progress*100) + '%)';
-};
-
 Player.UI.prototype._bindEvents = function () {
 	var player = this.player;
 
 	this.elems.playBtn.addEventListener('click', this._playBtnClick.bind(this));
 	this.elems.progressBar.addEventListener('click', this._progressBarClick.bind(this));
+	this.elems.volumeBar.addEventListener('click', this._volumeBarClick.bind(this));
 	this.elems.fileSelector.addEventListener('change', this._selectFile.bind(this));
 	this.elems.recBtn.addEventListener('click', this._recBtnClick.bind(this));
 
@@ -582,6 +594,13 @@ Player.UI.prototype._progressBarClick = function (e) {
 	this.player.setPosition(position);
 };
 
+Player.UI.prototype._volumeBarClick = function (e) {
+	var clickPos = this.helpers._getMouseClick(e, this.elems.volumeBar);
+	var volume = clickPos.x / this.elems.volumeBar.offsetWidth;
+	this.player.volume(volume);
+	this.elems.volume.style.transform = 'translateX(' + (volume * 100) + '%)';
+};
+
 Player.UI.prototype._playBtnClick = function (e) {
 	var player = this.player;
 
@@ -612,9 +631,15 @@ Player.UI.prototype._onPause = function() {
 
 // Render
 
+Player.UI.prototype._setProgress = function (progress) {
+	this.elems.progress.style.transform = 'translateX(' + (progress*100) + '%)';
+};
+
 Player.UI.prototype.render = function () {
 	var rAF = window.requestAnimationFrame;
 	var self = this;
+
+	this.elems.volume.style.transform = 'translateX(' + (this.player.volume() * 100) + '%)';
 
 	function draw () {
 		var position = self.player.getPosition();
