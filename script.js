@@ -349,15 +349,19 @@ Player.prototype.play = function (position) {
 	}
 
 	fromTime = this._getTimeByPosition(position);
-
-	this.connect();
-
 	this._startTime = this.audioCtx.currentTime - fromTime;
-	this.source.start(0, fromTime);
 
-	if (isTrigger) {
-		this._setStatus('play', true);
-		this.trigger('play');
+
+	if (position >= 1) {
+		this._onended();
+	} else {
+		this.connect();
+		this.source.start(0, fromTime);
+
+		if (isTrigger) {
+			this._setStatus('play', true);
+			this.trigger('play');
+		}
 	}
 };
 
@@ -526,10 +530,11 @@ Player.UI.prototype._bindEvents = function () {
 	var player = this.player;
 
 	this.elems.playBtn.addEventListener('click', this._playBtnClick.bind(this));
-	this.elems.progressBar.addEventListener('click', this._progressBarClick.bind(this));
-	this.elems.volumeBar.addEventListener('click', this._volumeBarClick.bind(this));
 	this.elems.fileSelector.addEventListener('change', this._selectFile.bind(this));
 	this.elems.recBtn.addEventListener('click', this._recBtnClick.bind(this));
+
+	this.helpers.slider(this.elems.progressBar, this.elems.progress, this.player.setPosition.bind(this.player));
+	this.helpers.slider(this.elems.volumeBar, this.elems.volume, this.player.volume.bind(this.player), true);
 
 	player.on('play', function () {
 		this.elems.playBtn.classList.add('pause');
@@ -567,6 +572,48 @@ Player.UI.prototype._bindEvents = function () {
 };
 
 Player.UI.prototype.helpers = {};
+Player.UI.prototype.helpers.slider = function (wrapper, progressElem, callback, changeOnMove) {
+	var clickPos = null;
+	var mousePos = this._getMouseClick;
+
+	function update(e) {
+		var value = mousePos(e, wrapper).x / wrapper.offsetWidth;
+
+		if (value < 0) {
+			value = 0;
+		} else if (value > 1) {
+			value = 1;
+		}
+
+		callback(value);
+		progressElem.style.transform = 'translateX(' + (value * 100) + '%)';
+	}
+
+	function mousedown(e) {
+		if (e.button === 0) {
+			if (changeOnMove) {
+				update(e);
+			}
+			window.addEventListener('mousemove', mousemove);
+			window.addEventListener('mouseup', mouseup);
+		}
+	}
+
+	function mousemove (e) {
+		if (changeOnMove) {
+			update(e);
+		}
+	}
+
+	function mouseup (e) {
+		update(e);
+		window.removeEventListener('mousemove', mousemove);
+		window.removeEventListener('mouseup', mouseup);
+	}
+
+	wrapper.addEventListener('mousedown', mousedown);
+};
+
 Player.UI.prototype.helpers._getMouseClick = function (e, element) {
 	var totalOffsetX = 0;
 	var totalOffsetY = 0;
@@ -587,19 +634,6 @@ Player.UI.prototype.helpers._getMouseClick = function (e, element) {
 };
 
 // Handlers
-
-Player.UI.prototype._progressBarClick = function (e) {
-	var clickPos = this.helpers._getMouseClick(e, this.elems.progressBar);
-	var position = clickPos.x / this.elems.progressBar.offsetWidth;
-	this.player.setPosition(position);
-};
-
-Player.UI.prototype._volumeBarClick = function (e) {
-	var clickPos = this.helpers._getMouseClick(e, this.elems.volumeBar);
-	var volume = clickPos.x / this.elems.volumeBar.offsetWidth;
-	this.player.volume(volume);
-	this.elems.volume.style.transform = 'translateX(' + (volume * 100) + '%)';
-};
 
 Player.UI.prototype._playBtnClick = function (e) {
 	var player = this.player;
