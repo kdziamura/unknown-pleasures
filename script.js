@@ -10,8 +10,7 @@ function getRandom() {
 
 // =====================================================
 
-function UnknownPleasures (audioCtx, options) {
-	this.audioCtx = audioCtx;
+function UnknownPleasures (analyser, options) {
 	this.options = options;
 	this.lines = new Array(options.lines);
 
@@ -25,7 +24,7 @@ function UnknownPleasures (audioCtx, options) {
 	ctx.lineWidth = options.lineWidth;
 	ctx.fillStyle = options.fillStyle;
 
-	this.setAnalyser();
+	this.setAnalyser(analyser);
 	this.dataArray = new Uint8Array(this.analyser.fftSize);
 
 
@@ -168,9 +167,7 @@ UnknownPleasures.prototype.render = function () {
 
 
 
-UnknownPleasures.prototype.setAnalyser = function (src) {
-	var analyser = this.audioCtx.createAnalyser();
-
+UnknownPleasures.prototype.setAnalyser = function (analyser) {
 	analyser.minDecibels = -90;
 	analyser.maxDecibels = -10;
 	analyser.smoothingTimeConstant = 1;
