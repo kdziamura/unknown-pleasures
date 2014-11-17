@@ -533,7 +533,6 @@ Player.UI = function (player) {
 
 Player.UI.prototype._bindEvents = function () {
 	var player = this.player;
-	var onPause = this._onPause.bind(this);
 	var elems = this.elems;
 
 	// Interaction
@@ -548,6 +547,10 @@ Player.UI.prototype._bindEvents = function () {
 
 	// Model listeners
 
+	function onPause() {
+		elems.playBtn.classList.remove('pause');
+	}
+
 	player.on('volumechange', function (e) {
 		elems.volume.style.transform = 'translateX(' + (e.value * 100) + '%)';
 	});
@@ -558,7 +561,6 @@ Player.UI.prototype._bindEvents = function () {
 
 	player.on('pause', onPause);
 	player.on('stop', onPause);
-	player.on('load', onPause);
 
 	player.on('loadstart', function () {
 		elems.playBtn.classList.add('loading');
@@ -668,15 +670,7 @@ Player.UI.prototype._selectFile = function(e) {
 	this.player.readFile(e.target.files[0]);
 };
 
-Player.UI.prototype._onPause = function() {
-	this.elems.playBtn.classList.remove('pause');
-};
-
 // Render
-
-Player.UI.prototype._setProgress = function (progress) {
-	this.elems.progress.style.transform = 'translateX(' + (progress*100) + '%)';
-};
 
 Player.UI.prototype.render = function () {
 	var rAF = window.requestAnimationFrame;
@@ -687,7 +681,7 @@ Player.UI.prototype.render = function () {
 	function draw () {
 		var position = self.player.getPosition();
 
-		self._setProgress(position);
+		self.elems.progress.style.transform = 'translateX(' + (position*100) + '%)';
 		rAF(draw);
 	}
 
