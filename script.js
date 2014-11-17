@@ -594,13 +594,7 @@ Player.UI.prototype.helpers.slider = function (wrapper, progressElem, callback, 
 
 	function update(e) {
 		var value = mousePos(e, wrapper).x / wrapper.offsetWidth;
-
-		if (value < 0) {
-			value = 0;
-		} else if (value > 1) {
-			value = 1;
-		}
-
+		value = value > 1 ? 1 : value < 0 ? 0 : value;
 		callback(value);
 	}
 
