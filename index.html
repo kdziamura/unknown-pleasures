@@ -31,6 +31,7 @@
 
 
 	var player = new Player();
+	var playerUI = new Player.UI(player);
 	var uP = new UnknownPleasures(player.analyser, renderOptions);
 
 	player.on('play', function () {
@@ -58,7 +59,7 @@
 	});
 
 	containerCvs.appendChild(uP.el);
-	containerAudio.appendChild(player.ui.el);
+	containerAudio.appendChild(playerUI.el);
 
 	</script>
 </body>

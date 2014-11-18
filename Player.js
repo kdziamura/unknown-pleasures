@@ -19,8 +19,6 @@ window.Player = (function () {
 		this._gainNode = this.audioCtx.createGain();
 		this.addNode(this._gainNode);
 
-		this.ui = new Player.UI(this);
-
 		this.on('play', this.stopRecord.bind(this));
 		this.on('record', this.pause.bind(this));
 	}
