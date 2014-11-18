@@ -9,15 +9,12 @@ window.Player = (function () {
 		this.audioCtx = new AudioContext();
 		this._pausePosition = 0;
 		this.source = null;
-		this._nodes = [];
 		this.handlers = [];
 
 		this._defineStatuses();
 
 		this.analyser = this.audioCtx.createAnalyser();
-		this.addNode(this.analyser);
 		this._gainNode = this.audioCtx.createGain();
-		this.addNode(this._gainNode);
 
 		this.on('play', this.stopRecord.bind(this));
 		this.on('record', this.pause.bind(this));
@@ -69,12 +66,11 @@ window.Player = (function () {
 		var source, i;
 
 		if (this.source) {
-			this.reset();
+			this._stop();
 			this.source.disconnect();
 		}
 
 		source = this.audioCtx.createBufferSource();
-
 		source.onended = this._onended.bind(this);
 
 		if (buffer) {
@@ -89,17 +85,18 @@ window.Player = (function () {
 	};
 
 	Player.prototype._connectNodes = function (source) {
-		var node = source || this.source;
-		var i;
+		var source = source || this.source;
 
-		for (i = 0; i < this._nodes.length; i++) {
-			node.connect(this._nodes[i]);
-			node = this._nodes[i];
-		}
-		node.connect(this.audioCtx.destination);
+		/**
+		 * TODO: methods to work with audio nodes graph
+		 */
+
+		this._gainNode.connect(this.audioCtx.destination);
+		this.analyser.connect(this._gainNode);
+		source.connect(this.analyser);
 	};
 
-	Player.prototype.reset = function () {
+	Player.prototype._stop = function () {
 		if (this.is('play')) {
 			this.source.stop();
 		}
@@ -182,7 +179,7 @@ window.Player = (function () {
 
 	Player.prototype.pause = function () {
 		this._pausePosition = this.getPosition();
-		this.reset();
+		this._stop();
 
 		this._setStatus('play', false);
 		this.trigger('pause');
@@ -190,14 +187,10 @@ window.Player = (function () {
 
 	Player.prototype.stop = function () {
 		this._pausePosition = 0;
-		this.reset();
+		this._stop();
 
 		this._setStatus('play', false);
 		this.trigger('stop');
-	};
-
-	Player.prototype.addNode = function (node) {
-		this._nodes.push(node);
 	};
 
 	Player.prototype._onended = function () {
@@ -291,7 +284,8 @@ window.Player = (function () {
 
 			function(stream) {
 				this._stream = stream;
-				this._connectNodes(this.audioCtx.createMediaStreamSource(stream));
+				this.analyser.disconnect();
+				this.audioCtx.createMediaStreamSource(stream).connect(this.analyser);
 				this._setStatus('record', true);
 				this._setStatus('pending', false);
 				this.trigger('record');
