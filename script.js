@@ -281,6 +281,7 @@ Player.prototype.connect = function (buffer) {
 
 Player.prototype._connectNodes = function (source) {
 	var node = source || this.source;
+	var i;
 
 	for (i = 0; i < this._nodes.length; i++) {
 		node.connect(this._nodes[i]);
