@@ -160,10 +160,10 @@ window.UnknownPleasures = (function () {
 	};
 
 	UnknownPleasures.prototype.setAnalyser = function (analyser) {
-		// analyser.minDecibels = -90;
-		// analyser.maxDecibels = -10;
-		// analyser.smoothingTimeConstant = 1;
-		// analyser.fftSize = 64;
+		analyser.minDecibels = -90;
+		analyser.maxDecibels = -10;
+		analyser.smoothingTimeConstant = 1;
+		analyser.fftSize = 64;
 		this.analyser = analyser;
 	};
 
